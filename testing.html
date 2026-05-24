@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MARS EXPEDITION QUIZ — CLASSIFIED ASSESSMENT</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <style>
+    /* =============================================
+       CSS VARIABLES — MARS THEME PALETTE
+    ============================================= */
+    :root {
+      --mars-red:     #c1440e;
+      --mars-deep:    #8b1a00;
+      --mars-orange:  #e8622a;
+      --mars-glow:    #ff6b35;
+      --mars-bright:  #ff8c55;
+      --mars-dark:    #0a0302;
+      --mars-black:   #050101;
+      --mars-surface: #1a0a05;
+      --mars-dust:    #c17a4a;
+      --accent-green: #39ff14;
+      --glass-bg:     rgba(18, 5, 2, 0.72);
+      --glass-border: rgba(193, 68, 14, 0.32);
+      --text-primary: #ffd4b8;
+      --text-secondary: #c17a4a;
+      --text-dim:     #7a4a30;
+    }
+
+    /* =============================================
+       RESET & BASE
+    ============================================= */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow-x: hidden;
+      background: var(--mars-black);
+      color: var(--text-primary);
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    /* =============================================
+       CANVAS BACKGROUND
+    ============================================= */
+    #bgCanvas {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+    }
+
+    /* =============================================
+       SCANLINES OVERLAY
+    ============================================= */
+    .scanlines {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px
+      );
+      pointer-events: none; z-index: 3;
+    }
+
+    /* =============================================
+       ATMOSPHERIC GLOW ACCENTS
+    ============================================= */
+    .atm-glow {
+      position: fixed; border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(193,68,14,0.07), transparent 70%);
+      pointer-events: none; z-index: 1;
+    }
+    .atm-glow.tl { width: 700px; height: 400px; top: -150px; left: -150px; }
+    .atm-glow.br { width: 700px; height: 400px; bottom: -150px; right: -150px; }
+
+    /* =============================================
+       SCREENS
+    ============================================= */
+    .screen {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 10;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .screen.hidden {
+      opacity: 0; pointer-events: none;
+      transform: scale(0.96) translateY(8px);
+    }
+
+    /* =============================================
+       LOADING SCREEN
+    ============================================= */
+    #loadingScreen { background: var(--mars-black); gap: 28px; }
+
+    .scan-stripe {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--mars-glow), transparent);
+      animation: scanStripe 2.2s linear infinite; opacity: 0.6;
+    }
+    @keyframes scanStripe { 0% { top: 0%; } 100% { top: 100%; } }
+
+    .load-planet-wrap {
+      position: relative;
+      width: 200px; height: 200px;
+    }
+
+    .load-planet {
+      width: 200px; height: 200px; border-radius: 50%;
+      background:
+        radial-gradient(circle at 32% 32%,
+          #ff8c55 0%, #e8622a 25%, #c1440e 50%, #8b1a00 72%, #3d0a00 100%);
+      box-shadow:
+        0 0 60px rgba(193,68,14,0.9),
+        0 0 120px rgba(193,68,14,0.45),
+        inset -35px -25px 50px rgba(0,0,0,0.65),
+        inset 8px 8px 20px rgba(255,140,85,0.15);
+      animation: loadPlanetPulse 3s ease-in-out infinite;
+      overflow: hidden;
+    }
+    .load-planet::before {
+      content: ''; position: absolute;
+      top: 28%; left: 6%; width: 84%; height: 14%;
+      background: rgba(139,26,0,0.45); border-radius: 50%;
+      transform: rotate(-4deg);
+    }
+    .load-planet::after {
+      content: ''; position: absolute;
+      top: 54%; left: 18%; width: 60%; height: 9%;
+      background: rgba(200,90,30,0.3); border-radius: 50%;
+    }
+    @keyframes loadPlanetPulse {
+      0%,100% { box-shadow: 0 0 60px rgba(193,68,14,0.9), 0 0 120px rgba(193,68,14,0.45), inset -35px -25px 50px rgba(0,0,0,0.65); }
+      50% { box-shadow: 0 0 80px rgba(255,107,53,1), 0 0 160px rgba(193,68,14,0.6), inset -35px -25px 50px rgba(0,0,0,0.65); }
+    }
+
+    .load-orbit-ring {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) rotateX(74deg);
+      width: 284px; height: 284px; border-radius: 50%;
+      border: 2px solid rgba(193,68,14,0.45);
+      box-shadow: 0 0 18px rgba(193,68,14,0.3);
+      animation: orbitPulse 3s ease-in-out infinite;
+    }
+    .load-orbit-ring.outer {
+      width: 320px; height: 320px;
+      border-color: rgba(193,68,14,0.2);
+      animation-delay: 0.5s;
+    }
+    @keyframes orbitPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 0.85; } }
+
+    .load-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      font-weight: 900; letter-spacing: 0.35em;
+      color: var(--mars-glow);
+      text-shadow: 0 0 30px rgba(255,107,53,0.9), 0 0 60px rgba(255,107,53,0.3);
+      text-transform: uppercase;
+    }
+
+    .load-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.78rem; letter-spacing: 0.22em;
+      color: var(--text-secondary); text-transform: uppercase;
+    }
+
+    .load-bar-wrap {
+      width: 320px; height: 5px;
+      background: rgba(193,68,14,0.18); border-radius: 3px; overflow: hidden;
+    }
+    .load-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--mars-deep), var(--mars-glow), var(--mars-bright));
+      border-radius: 3px;
+      box-shadow: 0 0 12px var(--mars-glow);
+      transition: width 0.08s linear;
+    }
+
+    .load-status {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.1em;
+    }
+
+    /* =============================================
+       GLASS PANEL
+    ============================================= */
+    .glass-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      box-shadow: 0 8px 40px rgba(193,68,14,0.18),
+                  inset 0 1px 0 rgba(255,107,53,0.08);
+      padding: 40px;
+      position: relative; overflow: hidden;
+    }
+    .glass-panel::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--mars-glow), transparent);
+    }
+
+    /* Corner brackets */
+    .cb {
+      position: absolute; width: 18px; height: 18px;
+      border-color: var(--mars-glow); border-style: solid; opacity: 0.55;
+    }
+    .cb.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+    .cb.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+    .cb.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+    .cb.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+    /* =============================================
+       INTRO SCREEN
+    ============================================= */
+    #introScreen { padding: 20px; }
+
+    .intro-wrap { max-width: 680px; width: 100%; text-align: center; }
+
+    /* 3D Rotating Mars */
+    .mars-3d-wrap {
+      width: 110px; height: 110px;
+      margin: 0 auto 28px;
+      perspective: 500px;
+    }
+    .mars-3d {
+      width: 110px; height: 110px; border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 28%,
+          #ff9966 0%, #e8622a 25%, #c1440e 50%, #8b1a00 72%, #3a0800 100%);
+      box-shadow:
+        0 0 45px rgba(193,68,14,1),
+        0 0 90px rgba(193,68,14,0.5),
+        0 0 130px rgba(193,68,14,0.2),
+        inset -22px -16px 32px rgba(0,0,0,0.7),
+        inset 5px 5px 14px rgba(255,140,85,0.18);
+      animation: spinMars 18s linear infinite;
+      transform-style: preserve-3d;
+      overflow: hidden;
+    }
+    .mars-3d::before {
+      content: ''; position: absolute;
+      top: 22%; left: 4%; width: 86%; height: 14%;
+      background: rgba(130,22,0,0.5); border-radius: 50%;
+      transform: rotate(-4deg);
+    }
+    .mars-3d::after {
+      content: ''; position: absolute;
+      top: 50%; left: 14%; width: 68%; height: 9%;
+      background: rgba(200,80,20,0.35); border-radius: 50%;
+    }
+    @keyframes spinMars {
+      0% { transform: rotateY(0deg) rotateX(6deg); }
+      100% { transform: rotateY(360deg) rotateX(6deg); }
+    }
+
+    .mission-tag {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem; letter-spacing: 0.28em;
+      color: var(--mars-glow); text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    h1.main-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.9rem, 5.5vw, 3.2rem);
+      font-weight: 900; line-height: 1.1;
+      color: #fff; letter-spacing: 0.04em;
+      text-shadow: 0 0 20px var(--mars-glow), 0 0 50px rgba(255,107,53,0.4);
+      margin-bottom: 14px;
+    }
+
+    .intro-subtitle {
+      font-size: 1.05rem; color: var(--text-secondary);
+      line-height: 1.65; margin-bottom: 28px;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(193,68,14,0.45), transparent);
+      margin: 24px 0;
+    }
+
+    /* Stat badges */
+    .stats-row {
+      display: flex; gap: 16px; justify-content: center;
+      flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .stat-badge {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 12px 22px;
+      border: 1px solid rgba(193,68,14,0.3); border-radius: 8px;
+      background: rgba(193,68,14,0.05);
+    }
+    .stat-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.4rem; font-weight: 700; color: var(--mars-glow);
+    }
+    .stat-lbl {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem; color: var(--text-dim);
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+
+    /* =============================================
+       BUTTONS
+    ============================================= */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 15px 38px;
+      background: linear-gradient(135deg, var(--mars-deep), var(--mars-red));
+      border: 1px solid var(--mars-glow); border-radius: 8px;
+      color: #fff; font-family: 'Orbitron', monospace;
+      font-size: 0.85rem; font-weight: 600; letter-spacing: 0.2em;
+      text-transform: uppercase; cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 22px rgba(193,68,14,0.45), inset 0 1px 0 rgba(255,107,53,0.18);
+      position: relative; overflow: hidden;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute; top: 0; left: -110%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.09), transparent);
+      transition: left 0.5s ease;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--mars-red), var(--mars-orange));
+      box-shadow: 0 0 44px rgba(193,68,14,0.9), 0 0 88px rgba(255,107,53,0.28);
+      transform: translateY(-2px);
+    }
+    .btn-primary:hover::after { left: 110%; }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.38; pointer-events: none; }
+
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px;
+      background: transparent;
+      border: 1px solid rgba(193,68,14,0.45); border-radius: 6px;
+      color: var(--text-secondary);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem; letter-spacing: 0.1em;
+      cursor: pointer; transition: all 0.3s ease;
+    }
+    .btn-ghost:hover {
+      border-color: var(--mars-glow); color: var(--mars-glow);
+      background: rgba(193,68,14,0.1);
+    }
+
+    /* Pulse animation */
+    .pulse-glow { animation: pulseGlow 2.5s ease-in-out infinite; }
+    @keyframes pulseGlow {
+      0%,100% { box-shadow: 0 0 22px rgba(193,68,14,0.45); }
+      50% { box-shadow: 0 0 50px rgba(255,107,53,0.85), 0 0 90px rgba(193,68,14,0.4); }
+    }
+
+    /* =============================================
+       SOUND TOGGLE (fixed)
+    ============================================= */
+    #soundToggle {
+      position: fixed; top: 18px; right: 18px; z-index: 200;
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 14px;
+      background: rgba(8,2,1,0.85);
+      border: 1px solid rgba(193,68,14,0.4); border-radius: 20px;
+      cursor: pointer; transition: all 0.3s ease;
+      backdrop-filter: blur(12px);
+    }
+    #soundToggle:hover {
+      border-color: var(--mars-glow);
+      box-shadow: 0 0 18px rgba(193,68,14,0.35);
+    }
+    .snd-icon { font-size: 0.95rem; }
+    .snd-lbl {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem; color: var(--text-dim); letter-spacing: 0.1em;
+    }
+
+    /* =============================================
+       RADAR (fixed, bottom-right)
+    ============================================= */
+    #radar {
+      position: fixed; bottom: 24px; right: 24px;
+      width: 96px; height: 96px; z-index: 50;
+      opacity: 0.55;
+    }
+    .r-ring {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%; border: 1px solid rgba(193,68,14,0.55);
+    }
+    .r-ring:nth-child(1) { width: 96px; height: 96px; }
+    .r-ring:nth-child(2) { width: 64px; height: 64px; }
+    .r-ring:nth-child(3) { width: 32px; height: 32px; }
+    .r-sweep {
+      position: absolute; top: 50%; left: 50%;
+      width: 48px; height: 2px;
+      transform-origin: left center;
+      background: linear-gradient(90deg, var(--mars-glow), transparent);
+      animation: radarSweep 4s linear infinite;
+    }
+    @keyframes radarSweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .r-blip {
+      position: absolute;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--mars-glow);
+      box-shadow: 0 0 8px var(--mars-glow);
+      animation: blipFade 4s ease-in-out infinite;
+    }
+    .r-blip:nth-child(5) { top: 28%; left: 62%; animation-delay: 0s; }
+    .r-blip:nth-child(6) { top: 66%; left: 38%; animation-delay: 1.3s; }
+    .r-blip:nth-child(7) { top: 44%; left: 22%; animation-delay: 2.6s; }
+    @keyframes blipFade { 0%,100% { opacity: 0; } 40%,60% { opacity: 1; } }
+
+    /* =============================================
+       QUIZ SCREEN
+    ============================================= */
+    #quizScreen { padding: 20px; overflow-y: auto; justify-content: flex-start; padding-top: 30px; }
+
+    .quiz-wrap {
+      max-width: 740px; width: 100%;
+      margin: 0 auto;
+      padding-bottom: 40px;
+    }
+
+    /* HUD bar */
+    .quiz-hud {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 18px; margin-bottom: 18px;
+      background: rgba(8,2,1,0.85);
+      border: 1px solid rgba(193,68,14,0.28); border-radius: 10px;
+      backdrop-filter: blur(12px);
+    }
+    .hud-unit { display: flex; flex-direction: column; gap: 1px; }
+    .hud-unit:nth-child(2) { align-items: center; }
+    .hud-unit:nth-child(3) { align-items: flex-end; }
+    .hud-lbl {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.58rem; color: var(--text-dim); letter-spacing: 0.14em; text-transform: uppercase;
+    }
+    .hud-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.95rem; font-weight: 600; color: var(--mars-glow);
+    }
+    .hud-live {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem; color: var(--accent-green); letter-spacing: 0.1em;
+    }
+    .live-dot {
+      display: inline-block; width: 7px; height: 7px;
+      border-radius: 50%; background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+      animation: liveBlink 1.4s ease-in-out infinite;
+      margin-right: 5px; vertical-align: middle;
+    }
+    @keyframes liveBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* Progress */
+    .prog-wrap { margin-bottom: 22px; }
+    .prog-head {
+      display: flex; justify-content: space-between; margin-bottom: 7px;
+    }
+    .prog-txt {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.66rem; color: var(--text-dim); letter-spacing: 0.1em;
+    }
+    .prog-track {
+      height: 6px; background: rgba(193,68,14,0.14); border-radius: 3px; overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--mars-deep), var(--mars-glow));
+      border-radius: 3px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 0 0 12px var(--mars-glow); position: relative;
+    }
+    .prog-fill::after {
+      content: ''; position: absolute; right: 0; top: 0;
+      width: 3px; height: 100%;
+      background: rgba(255,255,255,0.9); border-radius: 2px;
+      box-shadow: 0 0 7px #fff;
+    }
+
+    /* Question card */
+    .q-card {
+      padding: 32px 36px; margin-bottom: 18px;
+    }
+    @media (max-width: 540px) { .q-card { padding: 22px 18px; } }
+
+    .q-num {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.66rem; color: var(--mars-glow); letter-spacing: 0.22em;
+      text-transform: uppercase; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .q-num::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(193,68,14,0.5), transparent);
+    }
+
+    .q-text {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(1.05rem, 3vw, 1.35rem);
+      font-weight: 600; color: var(--text-primary); line-height: 1.55;
+    }
+
+    /* Options */
+    .opts-grid { display: flex; flex-direction: column; gap: 11px; margin-bottom: 22px; }
+
+    .opt-btn {
+      display: flex; align-items: center; gap: 15px;
+      padding: 15px 18px;
+      background: rgba(8,2,1,0.65);
+      border: 1px solid rgba(193,68,14,0.22); border-radius: 10px;
+      cursor: pointer; text-align: left;
+      backdrop-filter: blur(10px);
+      transition: all 0.28s ease;
+      position: relative; overflow: hidden;
+    }
+    .opt-btn::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 0%; height: 100%;
+      background: linear-gradient(90deg, rgba(193,68,14,0.14), transparent);
+      transition: width 0.38s ease;
+    }
+    .opt-btn:hover { border-color: rgba(193,68,14,0.65); transform: translateX(5px); }
+    .opt-btn:hover::before { width: 100%; }
+    .opt-btn.selected {
+      border-color: var(--mars-glow);
+      background: rgba(193,68,14,0.18);
+      box-shadow: 0 0 22px rgba(255,107,53,0.28), inset 0 0 18px rgba(193,68,14,0.08);
+    }
+    .opt-btn.selected::before { width: 100%; }
+
+    .opt-letter {
+      min-width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(193,68,14,0.5); border-radius: 6px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.72rem; font-weight: 700;
+      color: var(--mars-glow); flex-shrink: 0;
+      transition: all 0.28s ease;
+    }
+    .opt-btn.selected .opt-letter {
+      background: var(--mars-glow); color: #000;
+      border-color: var(--mars-glow); box-shadow: 0 0 14px var(--mars-glow);
+    }
+    .opt-text {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.98rem; font-weight: 500; color: var(--text-primary); line-height: 1.4;
+    }
+
+    /* Nav row */
+    .nav-row { display: flex; justify-content: flex-end; gap: 12px; }
+
+    /* Question transitions */
+    .q-enter { animation: qEnter 0.42s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
+    @keyframes qEnter {
+      from { opacity: 0; transform: translateX(28px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .q-exit { animation: qExit 0.28s ease forwards; }
+    @keyframes qExit {
+      to { opacity: 0; transform: translateX(-28px); }
+    }
+
+    /* =============================================
+       RESULTS SCREEN
+    ============================================= */
+    #resultsScreen {
+      padding: 20px; overflow-y: auto;
+      justify-content: flex-start; align-items: center;
+      padding-top: 40px;
+    }
+
+    .results-wrap {
+      max-width: 780px; width: 100%;
+      margin: 0 auto; padding-bottom: 60px;
+    }
+
+    /* Score card */
+    .score-card { padding: 40px; text-align: center; margin-bottom: 22px; }
+
+    /* Circular score gauge */
+    .score-gauge {
+      width: 164px; height: 164px;
+      margin: 0 auto 22px;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .score-gauge svg {
+      position: absolute; top: 0; left: 0;
+      transform: rotate(-90deg);
+    }
+    .gauge-bg { fill: none; stroke: rgba(193,68,14,0.18); stroke-width: 6; }
+    .gauge-fill {
+      fill: none; stroke: var(--mars-glow); stroke-width: 6;
+      stroke-linecap: round;
+      stroke-dasharray: 471.24; /* 2π × 75 */
+      stroke-dashoffset: 471.24;
+      transition: stroke-dashoffset 1.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+      filter: drop-shadow(0 0 10px var(--mars-glow));
+    }
+    .score-inner {
+      position: relative; z-index: 1; text-align: center;
+    }
+    .score-num {
+      font-family: 'Orbitron', monospace;
+      font-size: 2.6rem; font-weight: 900;
+      color: var(--mars-glow); line-height: 1;
+      text-shadow: 0 0 22px var(--mars-glow);
+    }
+    .score-denom {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.78rem; color: var(--text-dim);
+    }
+
+    .score-pct {
+      font-family: 'Orbitron', monospace;
+      font-size: 2rem; font-weight: 700;
+      color: var(--mars-glow); margin-bottom: 12px;
+    }
+    .score-msg {
+      font-size: 1.1rem; color: var(--text-secondary);
+      line-height: 1.6; max-width: 480px; margin: 0 auto 28px;
+    }
+
+    .results-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* Review panel */
+    .review-panel { padding: 0; }
+    .review-head {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.9rem; font-weight: 700;
+      color: var(--mars-glow); letter-spacing: 0.2em; text-transform: uppercase;
+      padding: 16px 24px; border-bottom: 1px solid rgba(193,68,14,0.3);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .review-head-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--mars-glow); box-shadow: 0 0 10px var(--mars-glow);
+    }
+
+    .review-list { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+    .rev-item {
+      padding: 18px 18px 18px 18px;
+      border-radius: 10px; border: 1px solid rgba(193,68,14,0.2);
+      background: rgba(8,2,1,0.55); position: relative;
+    }
+    .rev-item.is-correct { border-color: rgba(57,255,20,0.28); background: rgba(57,255,20,0.025); }
+    .rev-item.is-wrong   { border-color: rgba(193,68,14,0.38); background: rgba(193,68,14,0.04); }
+
+    .rev-badge {
+      position: absolute; top: 14px; right: 14px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem; letter-spacing: 0.1em;
+      padding: 3px 9px; border-radius: 4px;
+    }
+    .rev-badge.correct {
+      background: rgba(57,255,20,0.14); color: var(--accent-green);
+      border: 1px solid rgba(57,255,20,0.3);
+    }
+    .rev-badge.wrong {
+      background: rgba(193,68,14,0.2); color: var(--mars-glow);
+      border: 1px solid rgba(193,68,14,0.4);
+    }
+
+    .rev-qnum {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem; color: var(--text-dim); letter-spacing: 0.14em;
+      text-transform: uppercase; margin-bottom: 7px;
+    }
+    .rev-qtxt {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.98rem; font-weight: 600;
+      color: var(--text-primary); line-height: 1.4; margin-bottom: 12px;
+      padding-right: 70px;
+    }
+    .rev-answers { display: flex; flex-direction: column; gap: 5px; }
+    .rev-ans {
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.9rem; padding: 6px 11px; border-radius: 6px;
+    }
+    .rev-ans.user-only {
+      background: rgba(193,68,14,0.14); color: var(--mars-glow);
+      border: 1px solid rgba(193,68,14,0.36);
+    }
+    .rev-ans.correct-only {
+      background: rgba(57,255,20,0.07); color: var(--accent-green);
+      border: 1px solid rgba(57,255,20,0.25);
+    }
+    .rev-ans.both {
+      background: rgba(57,255,20,0.1); color: var(--accent-green);
+      border: 1px solid rgba(57,255,20,0.38);
+    }
+    .rev-tag {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 1px 7px; border-radius: 3px;
+      background: rgba(0,0,0,0.35); flex-shrink: 0;
+    }
+
+    /* =============================================
+       SCROLLBAR
+    ============================================= */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--mars-black); }
+    ::-webkit-scrollbar-thumb { background: rgba(193,68,14,0.5); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--mars-glow); }
+
+    /* =============================================
+       RESPONSIVE
+    ============================================= */
+    @media (max-width: 540px) {
+      .glass-panel { padding: 24px 16px; }
+      .stats-row { gap: 10px; }
+      .stat-badge { padding: 10px 14px; }
+      .quiz-hud { padding: 9px 12px; }
+      #radar { display: none; }
+      .score-gauge { width: 140px; height: 140px; }
+      .score-gauge svg circle { r: 62; cx: 70; cy: 70; }
+      .score-gauge svg { width: 140px; height: 140px; }
+      .gauge-bg, .gauge-fill { stroke-width: 5; }
+      .gauge-fill { stroke-dasharray: 389.56; stroke-dashoffset: 389.56; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Animated background canvas -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- CRT scanlines -->
+<div class="scanlines"></div>
+
+<!-- Atmospheric glow blobs -->
+<div class="atm-glow tl"></div>
+<div class="atm-glow br"></div>
+
+<!-- =============================================
+     SOUND TOGGLE BUTTON (always visible)
+============================================= -->
+<button id="soundToggle" onclick="toggleSound()" title="Toggle ambient sound">
+  <span class="snd-icon" id="sndIcon">🔇</span>
+  <span class="snd-lbl" id="sndLbl">AMBIENT</span>
+</button>
+
+<!-- =============================================
+     RADAR WIDGET (bottom-right)
+============================================= -->
+<div id="radar">
+  <div class="r-ring"></div>
+  <div class="r-ring"></div>
+  <div class="r-ring"></div>
+  <div class="r-sweep"></div>
+  <div class="r-blip"></div>
+  <div class="r-blip"></div>
+  <div class="r-blip"></div>
+</div>
+
+<!-- =============================================
+     SCREEN 1 — LOADING
+============================================= -->
+<div class="screen" id="loadingScreen">
+  <div class="scan-stripe"></div>
+
+  <div class="load-planet-wrap">
+    <div class="load-planet"></div>
+    <div class="load-orbit-ring"></div>
+    <div class="load-orbit-ring outer"></div>
+  </div>
+
+  <div class="load-title">MARS QUIZ</div>
+  <div class="load-sub">EXPEDITION KNOWLEDGE ASSESSMENT // CLASSIFIED</div>
+
+  <div class="load-bar-wrap">
+    <div class="load-bar" id="loadBar"></div>
+  </div>
+
+  <div class="load-status" id="loadStatus">INITIALIZING SYSTEMS...</div>
+</div>
+
+<!-- =============================================
+     SCREEN 2 — INTRO
+============================================= -->
+<div class="screen hidden" id="introScreen">
+  <div class="intro-wrap">
+    <div class="glass-panel">
+      <div class="cb tl"></div><div class="cb tr"></div>
+      <div class="cb bl"></div><div class="cb br"></div>
+
+      <div class="mars-3d-wrap"><div class="mars-3d"></div></div>
+
+      <div class="mission-tag">▸ MISSION BRIEFING // AUTHORIZATION: OPEN</div>
+      <h1 class="main-title">MARS EXPEDITION<br>KNOWLEDGE QUIZ</h1>
+
+      <p class="intro-subtitle">
+        You are about to undergo the official Mars Colonist Assessment.<br>
+        20 classified questions. One mission. The Red Planet is waiting.
+      </p>
+
+      <div class="divider"></div>
+
+      <div class="stats-row">
+        <div class="stat-badge">
+          <span class="stat-val">20</span>
+          <span class="stat-lbl">Questions</span>
+        </div>
+        <div class="stat-badge">
+          <span class="stat-val">4</span>
+          <span class="stat-lbl">Options Each</span>
+        </div>
+        <div class="stat-badge">
+          <span class="stat-val">∞</span>
+          <span class="stat-lbl">Retries</span>
+        </div>
+      </div>
+
+      <button class="btn-primary pulse-glow" onclick="startQuiz()">
+        <span>▶</span> INITIATE MISSION
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================
+     SCREEN 3 — QUIZ
+============================================= -->
+<div class="screen hidden" id="quizScreen">
+  <div class="quiz-wrap">
+
+    <!-- HUD top bar -->
+    <div class="quiz-hud">
+      <div class="hud-unit">
+        <span class="hud-lbl">MISSION</span>
+        <span class="hud-val">MARS-001</span>
+      </div>
+      <div class="hud-unit">
+        <span class="hud-lbl">SECTOR</span>
+        <span class="hud-val" id="hudQ">Q 01 / 20</span>
+      </div>
+      <div class="hud-unit">
+        <span class="hud-lbl">STATUS</span>
+        <span class="hud-live"><span class="live-dot"></span>LIVE FEED</span>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="prog-wrap">
+      <div class="prog-head">
+        <span class="prog-txt" id="progTxt">QUESTION 1 OF 20</span>
+        <span class="prog-txt" id="progPct">0%</span>
+      </div>
+      <div class="prog-track">
+        <div class="prog-fill" id="progFill"></div>
+      </div>
+    </div>
+
+    <!-- Question card -->
+    <div class="glass-panel q-card" id="qCard">
+      <div class="cb tl"></div><div class="cb tr"></div>
+      <div class="cb bl"></div><div class="cb br"></div>
+      <div class="q-num" id="qNum">QUERY 001</div>
+      <div class="q-text" id="qText"></div>
+    </div>
+
+    <!-- Answer options -->
+    <div class="opts-grid" id="optsGrid"></div>
+
+    <!-- Navigation -->
+    <div class="nav-row">
+      <button class="btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>NEXT ▸</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- =============================================
+     SCREEN 4 — RESULTS
+============================================= -->
+<div class="screen hidden" id="resultsScreen">
+  <div class="results-wrap">
+
+    <!-- Score card -->
+    <div class="glass-panel score-card">
+      <div class="cb tl"></div><div class="cb tr"></div>
+      <div class="cb bl"></div><div class="cb br"></div>
+
+      <div class="mission-tag">▸ MISSION DEBRIEF // ASSESSMENT COMPLETE</div>
+
+      <!-- Circular gauge -->
+      <div class="score-gauge">
+        <svg viewBox="0 0 164 164" width="164" height="164">
+          <circle class="gauge-bg" cx="82" cy="82" r="75"/>
+          <circle class="gauge-fill" id="gaugeFill" cx="82" cy="82" r="75"/>
+        </svg>
+        <div class="score-inner">
+          <div class="score-num" id="scoreNum">0</div>
+          <div class="score-denom" id="scoreDenom">/ 20</div>
+        </div>
+      </div>
+
+      <div class="score-pct" id="scorePct">0%</div>
+      <div class="score-msg" id="scoreMsg"></div>
+
+      <div class="divider"></div>
+
+      <div class="results-btns">
+        <button class="btn-primary pulse-glow" onclick="restartQuiz()">↺ RESTART MISSION</button>
+        <button class="btn-ghost" onclick="scrollToReview()">▾ FULL DEBRIEF</button>
+      </div>
+    </div>
+
+    <!-- Review list -->
+    <div class="glass-panel review-panel" id="reviewPanel">
+      <div class="review-head">
+        <span class="review-head-dot"></span>
+        MISSION REVIEW — FULL DEBRIEF
+      </div>
+      <div class="review-list" id="reviewList"></div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- =============================================
+     JAVASCRIPT
+============================================= -->
+<script>
+/* ============================================
+   QUIZ DATA — EDIT YOUR QUESTIONS HERE
+   =============================================
+   Each entry has:
+     question     : string  — the question text
+     options      : array   — exactly 4 answer strings [A, B, C, D]
+     correctAnswer: number  — 0=A, 1=B, 2=C, 3=D
+   ============================================= */
+const QUIZ_DATA = [
+  {
+    question: "[ PLACEHOLDER ] Question 1: Replace this text with your actual question. This placeholder is easy to find and edit.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 0   // 0 = A is correct
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 2: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 1   // 1 = B is correct
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 3: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 2
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 4: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 3
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 5: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 6: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 1
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 7: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 2
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 8: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 9: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 3
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 10: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 1
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 11: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 2
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 12: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 13: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 3
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 14: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 1
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 15: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 2
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 16: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 0
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 17: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 3
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 18: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 1
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 19: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 2
+  },
+  {
+    question: "[ PLACEHOLDER ] Question 20: Replace this text with your actual question.",
+    options: [
+      "Option A — replace this answer",
+      "Option B — replace this answer",
+      "Option C — replace this answer",
+      "Option D — replace this answer"
+    ],
+    correctAnswer: 0
+  }
+];
+
+/* ============================================
+   SCORE MESSAGES — Edit these motivational messages
+   min/max = score range (inclusive)
+   ============================================= */
+const SCORE_MESSAGES = [
+  { min: 0,  max: 4,  msg: "Mission Critical Failure. Your Mars knowledge is dangerously insufficient. Return to Earth immediately for re-training, Commander." },
+  { min: 5,  max: 9,  msg: "Suboptimal performance detected. You survived the briefing room, but the Red Planet demands far more. Study the Martian archives." },
+  { min: 10, max: 13, msg: "Adequate. Basic survival knowledge confirmed. Mars is unforgiving — sharpen your expertise before the next expedition." },
+  { min: 14, max: 16, msg: "Commendable. You demonstrate solid Mars expertise. The colony would be fortunate to have you on the crew." },
+  { min: 17, max: 19, msg: "Outstanding. You are a true Mars Pioneer. Your knowledge rivals the greatest space scientists of our era." },
+  { min: 20, max: 20, msg: "PERFECT SCORE. You are the ultimate Mars Commander. The Red Planet holds no secrets from you. Mission Elite Status granted." }
+];
+
+/* ============================================
+   QUIZ STATE
+   ============================================= */
+let currentQ    = 0;
+let userAnswers = new Array(QUIZ_DATA.length).fill(null);
+let audioCtx    = null;
+let ambientOn   = false;
+let ambientNodes = [];
+
+/* ============================================
+   CANVAS BACKGROUND
+   Stars, dust particles, meteor streaks
+   ============================================= */
+const canvas = document.getElementById('bgCanvas');
+const ctx2   = canvas.getContext('2d');
+let stars = [], dustParts = [], meteors = [];
+let frame = 0;
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  buildStars();
+}
+
+function buildStars() {
+  stars = [];
+  const n = Math.floor((canvas.width * canvas.height) / 2800);
+  for (let i = 0; i < n; i++) {
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.4 + 0.2,
+      a: Math.random() * 0.65 + 0.12,
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * 0.018 + 0.004,
+      warm: Math.random() > 0.8
+    });
+  }
+  dustParts = [];
+  for (let i = 0; i < 75; i++) {
+    dustParts.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.8 + 0.4,
+      vx: (Math.random() - 0.35) * 0.42,
+      vy: (Math.random() - 0.5) * 0.28,
+      a: Math.random() * 0.22 + 0.04,
+      h: 15 + Math.random() * 20  // hue shift
+    });
+  }
+}
+
+function renderBg() {
+  requestAnimationFrame(renderBg);
+  frame++;
+  ctx2.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Base gradient
+  const grad = ctx2.createRadialGradient(
+    canvas.width * 0.5, canvas.height * 0.8, 0,
+    canvas.width * 0.5, canvas.height * 0.3, canvas.height
+  );
+  grad.addColorStop(0, 'rgba(28,7,2,0.98)');
+  grad.addColorStop(0.6, 'rgba(12,2,1,0.99)');
+  grad.addColorStop(1, 'rgba(4,1,1,1)');
+  ctx2.fillStyle = grad;
+  ctx2.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Subtle Mars-glow horizon
+  const hGrad = ctx2.createLinearGradient(0, canvas.height * 0.65, 0, canvas.height);
+  hGrad.addColorStop(0, 'transparent');
+  hGrad.addColorStop(1, 'rgba(193,68,14,0.055)');
+  ctx2.fillStyle = hGrad;
+  ctx2.fillRect(0, canvas.height * 0.65, canvas.width, canvas.height * 0.35);
+
+  // Stars
+  for (const s of stars) {
+    s.phase += s.speed;
+    const alpha = s.a * (0.65 + 0.35 * Math.sin(s.phase));
+    ctx2.beginPath();
+    ctx2.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx2.fillStyle = s.warm ? '#ffd4b8' : '#ffffff';
+    ctx2.globalAlpha = alpha;
+    ctx2.fill();
+  }
+  ctx2.globalAlpha = 1;
+
+  // Dust particles
+  for (const p of dustParts) {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < -5) p.x = canvas.width + 5;
+    if (p.x > canvas.width + 5) p.x = -5;
+    if (p.y < -5) p.y = canvas.height + 5;
+    if (p.y > canvas.height + 5) p.y = -5;
+    ctx2.beginPath();
+    ctx2.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx2.fillStyle = `hsl(${18 + p.h}, 58%, 52%)`;
+    ctx2.globalAlpha = p.a;
+    ctx2.fill();
+  }
+  ctx2.globalAlpha = 1;
+
+  // Sporadic meteor streaks (dust storms)
+  if (frame % 240 === 0 && Math.random() > 0.3) {
+    meteors.push({
+      x: Math.random() * canvas.width * 0.7,
+      y: Math.random() * canvas.height * 0.55,
+      len: Math.random() * 90 + 40,
+      a: 0.75,
+      spd: Math.random() * 9 + 5,
+      ang: Math.random() * 0.3 + 0.08
+    });
+  }
+  for (let i = meteors.length - 1; i >= 0; i--) {
+    const m = meteors[i];
+    ctx2.save();
+    ctx2.translate(m.x, m.y);
+    ctx2.rotate(m.ang);
+    const mg = ctx2.createLinearGradient(0, 0, m.len, 0);
+    mg.addColorStop(0, `rgba(255,120,60,${m.a})`);
+    mg.addColorStop(1, 'transparent');
+    ctx2.strokeStyle = mg;
+    ctx2.lineWidth = 1.5;
+    ctx2.globalAlpha = m.a;
+    ctx2.beginPath();
+    ctx2.moveTo(0, 0);
+    ctx2.lineTo(m.len, 0);
+    ctx2.stroke();
+    ctx2.restore();
+    ctx2.globalAlpha = 1;
+    m.x += m.spd;
+    m.y += m.spd * Math.tan(m.ang);
+    m.a -= 0.018;
+    if (m.a <= 0) meteors.splice(i, 1);
+  }
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+renderBg();
+
+/* ============================================
+   LOADING SEQUENCE
+   ============================================= */
+const LOAD_MSGS = [
+  "INITIALIZING SYSTEMS...",
+  "LOADING MISSION PARAMETERS...",
+  "CALIBRATING ATMOSPHERIC SENSORS...",
+  "ESTABLISHING MARS UPLINK...",
+  "SCANNING SURFACE TERRAIN...",
+  "DEPLOYING ROVER NETWORK...",
+  "DECRYPTING MISSION FILES...",
+  "SYNCHRONIZING ORBITAL DATA...",
+  "ALL SYSTEMS NOMINAL. READY."
+];
+
+let loadPct = 0;
+const loadBar    = document.getElementById('loadBar');
+const loadStatus = document.getElementById('loadStatus');
+
+function runLoader() {
+  const iv = setInterval(() => {
+    loadPct += Math.random() * 3.2 + 0.8;
+    if (loadPct > 100) loadPct = 100;
+    loadBar.style.width = loadPct + '%';
+    const mi = Math.min(
+      Math.floor((loadPct / 100) * (LOAD_MSGS.length - 1)),
+      LOAD_MSGS.length - 1
+    );
+    loadStatus.textContent = LOAD_MSGS[mi];
+    if (loadPct >= 100) {
+      clearInterval(iv);
+      setTimeout(() => switchScreen('introScreen'), 700);
+    }
+  }, 55);
+}
+setTimeout(runLoader, 400);
+
+/* ============================================
+   SCREEN MANAGER
+   ============================================= */
+function switchScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  // Small delay so CSS transition fires properly
+  setTimeout(() => document.getElementById(id).classList.remove('hidden'), 50);
+}
+
+/* ============================================
+   WEB AUDIO — PROCEDURAL SOUND EFFECTS
+   All sounds generated via oscillators — no files needed
+   ============================================= */
+function getAC() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+// Short UI beep on button click
+function sfxClick() {
+  try {
+    const ac = getAC();
+    const osc = ac.createOscillator(), g = ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    osc.frequency.setValueAtTime(900, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(450, ac.currentTime + 0.1);
+    g.gain.setValueAtTime(0.09, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.14);
+    osc.start(ac.currentTime); osc.stop(ac.currentTime + 0.16);
+  } catch(e){}
+}
+
+// Soft chime on selecting an answer
+function sfxSelect() {
+  try {
+    const ac = getAC();
+    const osc = ac.createOscillator(), g = ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(660, ac.currentTime);
+    osc.frequency.setValueAtTime(880, ac.currentTime + 0.06);
+    g.gain.setValueAtTime(0.07, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.22);
+    osc.start(ac.currentTime); osc.stop(ac.currentTime + 0.26);
+  } catch(e){}
+}
+
+// Victory arpeggio on quiz completion
+function sfxComplete() {
+  try {
+    const ac = getAC();
+    [523, 659, 784, 1047].forEach((f, i) => {
+      const osc = ac.createOscillator(), g = ac.createGain();
+      osc.connect(g); g.connect(ac.destination);
+      osc.frequency.value = f;
+      const t = ac.currentTime + i * 0.13;
+      g.gain.setValueAtTime(0.07, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+      osc.start(t); osc.stop(t + 0.38);
+    });
+  } catch(e){}
+}
+
+// Ambient Mars atmosphere — low drone + filtered noise
+function startAmbient() {
+  try {
+    const ac = getAC();
+
+    // Bass drone
+    const drone = ac.createOscillator();
+    const droneGain = ac.createGain();
+    drone.type = 'sawtooth';
+    drone.frequency.value = 48;
+    droneGain.gain.value = 0.028;
+    drone.connect(droneGain);
+    droneGain.connect(ac.destination);
+    drone.start();
+
+    // Second harmonic for richness
+    const drone2 = ac.createOscillator();
+    const dg2 = ac.createGain();
+    drone2.type = 'sine';
+    drone2.frequency.value = 72;
+    dg2.gain.value = 0.018;
+    drone2.connect(dg2); dg2.connect(ac.destination);
+    drone2.start();
+
+    // Wind noise
+    const bufSz = Math.ceil(ac.sampleRate * 3);
+    const buf = ac.createBuffer(1, bufSz, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSz; i++) data[i] = (Math.random() * 2 - 1);
+    const noiseNode = ac.createBufferSource();
+    noiseNode.buffer = buf; noiseNode.loop = true;
+    const lpf = ac.createBiquadFilter();
+    lpf.type = 'lowpass'; lpf.frequency.value = 350;
+    const noiseGain = ac.createGain();
+    noiseGain.gain.value = 0.035;
+    noiseNode.connect(lpf); lpf.connect(noiseGain); noiseGain.connect(ac.destination);
+    noiseNode.start();
+
+    ambientNodes = [drone, drone2, noiseNode];
+    ambientOn = true;
+    document.getElementById('sndIcon').textContent = '🔊';
+  } catch(e){}
+}
+
+function stopAmbient() {
+  ambientNodes.forEach(n => { try { n.stop(); } catch(e){} });
+  ambientNodes = [];
+  ambientOn = false;
+  document.getElementById('sndIcon').textContent = '🔇';
+}
+
+function toggleSound() {
+  sfxClick();
+  ambientOn ? stopAmbient() : startAmbient();
+}
+
+/* ============================================
+   QUIZ LOGIC
+   ============================================= */
+function startQuiz() {
+  sfxClick();
+  currentQ    = 0;
+  userAnswers = new Array(QUIZ_DATA.length).fill(null);
+  switchScreen('quizScreen');
+  setTimeout(renderQuestion, 200);
+}
+
+function renderQuestion(entering = true) {
+  const q = QUIZ_DATA[currentQ];
+  const total = QUIZ_DATA.length;
+  const pct = Math.round((currentQ / total) * 100);
+
+  // Update HUD
+  document.getElementById('hudQ').textContent =
+    `Q ${String(currentQ + 1).padStart(2, '0')} / ${total}`;
+  document.getElementById('progTxt').textContent =
+    `QUESTION ${currentQ + 1} OF ${total}`;
+  document.getElementById('progPct').textContent = pct + '%';
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('qNum').textContent =
+    `QUERY ${String(currentQ + 1).padStart(3, '0')}`;
+  document.getElementById('qText').textContent = q.question;
+
+  // Build option buttons
+  const grid = document.getElementById('optsGrid');
+  grid.innerHTML = '';
+  const LETTERS = ['A','B','C','D'];
+
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    if (userAnswers[currentQ] === i) btn.classList.add('selected');
+    btn.innerHTML = `
+      <span class="opt-letter">${LETTERS[i]}</span>
+      <span class="opt-text">${opt}</span>
+    `;
+    btn.addEventListener('click', () => pickAnswer(i, btn));
+    grid.appendChild(btn);
+  });
+
+  // Next button state
+  const nb = document.getElementById('nextBtn');
+  nb.disabled = (userAnswers[currentQ] === null);
+
+  // Entrance animation
+  if (entering) {
+    const qCard = document.getElementById('qCard');
+    qCard.classList.remove('q-enter', 'q-exit');
+    void qCard.offsetWidth; // reflow
+    qCard.classList.add('q-enter');
+    grid.classList.remove('q-enter');
+    void grid.offsetWidth;
+    grid.classList.add('q-enter');
+  }
+}
+
+function pickAnswer(idx, btn) {
+  sfxSelect();
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  userAnswers[currentQ] = idx;
+  const nb = document.getElementById('nextBtn');
+  nb.disabled = false;
+}
+
+function nextQuestion() {
+  if (userAnswers[currentQ] === null) return;
+  sfxClick();
+
+  if (currentQ < QUIZ_DATA.length - 1) {
+    // Slide out, then render next
+    const qCard = document.getElementById('qCard');
+    const grid  = document.getElementById('optsGrid');
+    qCard.classList.remove('q-enter');
+    grid.classList.remove('q-enter');
+    qCard.classList.add('q-exit');
+    grid.classList.add('q-exit');
+    setTimeout(() => {
+      qCard.classList.remove('q-exit');
+      grid.classList.remove('q-exit');
+      currentQ++;
+      renderQuestion();
+    }, 280);
+  } else {
+    finishQuiz();
+  }
+}
+
+/* ============================================
+   RESULTS & REVIEW
+   ============================================= */
+function finishQuiz() {
+  sfxComplete();
+
+  let score = 0;
+  userAnswers.forEach((ans, i) => {
+    if (ans === QUIZ_DATA[i].correctAnswer) score++;
+  });
+
+  const total = QUIZ_DATA.length;
+  const pct   = Math.round((score / total) * 100);
+
+  switchScreen('resultsScreen');
+
+  setTimeout(() => {
+    // Numbers
+    document.getElementById('scoreNum').textContent   = score;
+    document.getElementById('scoreDenom').textContent = `/ ${total}`;
+    document.getElementById('scorePct').textContent   = pct + '%';
+
+    // Circular gauge animation
+    // Circumference = 2π × 75 ≈ 471.24
+    const circumference = 2 * Math.PI * 75;
+    const offset = circumference * (1 - pct / 100);
+    document.getElementById('gaugeFill').style.strokeDashoffset = offset;
+
+    // Message
+    const m = SCORE_MESSAGES.find(s => score >= s.min && score <= s.max);
+    document.getElementById('scoreMsg').textContent = m ? m.msg : '';
+
+    // Build review list
+    buildReview();
+  }, 300);
+}
+
+function buildReview() {
+  const list = document.getElementById('reviewList');
+  list.innerHTML = '';
+  const LETTERS = ['A','B','C','D'];
+
+  QUIZ_DATA.forEach((q, i) => {
+    const userAns = userAnswers[i];
+    const correct = q.correctAnswer;
+    const hit     = userAns === correct;
+
+    const item = document.createElement('div');
+    item.className = `rev-item ${hit ? 'is-correct' : 'is-wrong'}`;
+
+    // Answer display
+    let answersHTML = '';
+    if (hit) {
+      answersHTML = `
+        <div class="rev-ans both">
+          <span class="rev-tag">YOUR ANSWER + CORRECT</span>
+          ${LETTERS[correct]}. ${escHtml(q.options[correct])}
+        </div>`;
+    } else {
+      answersHTML = `
+        <div class="rev-ans user-only">
+          <span class="rev-tag">YOUR ANSWER</span>
+          ${userAns !== null ? `${LETTERS[userAns]}. ${escHtml(q.options[userAns])}` : 'NOT ANSWERED'}
+        </div>
+        <div class="rev-ans correct-only">
+          <span class="rev-tag">CORRECT</span>
+          ${LETTERS[correct]}. ${escHtml(q.options[correct])}
+        </div>`;
+    }
+
+    item.innerHTML = `
+      <span class="rev-badge ${hit ? 'correct' : 'wrong'}">${hit ? '✓ CORRECT' : '✗ WRONG'}</span>
+      <div class="rev-qnum">QUESTION ${i + 1} OF ${QUIZ_DATA.length}</div>
+      <div class="rev-qtxt">${escHtml(q.question)}</div>
+      <div class="rev-answers">${answersHTML}</div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+// Safely escape HTML for display
+function escHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function restartQuiz() {
+  sfxClick();
+  currentQ    = 0;
+  userAnswers = new Array(QUIZ_DATA.length).fill(null);
+  // Reset gauge for next time
+  document.getElementById('gaugeFill').style.strokeDashoffset = '471.24';
+  switchScreen('introScreen');
+}
+
+function scrollToReview() {
+  document.getElementById('reviewPanel').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
