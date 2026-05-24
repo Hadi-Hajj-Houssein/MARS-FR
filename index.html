@@ -355,7 +355,7 @@ body::after{content:'';position:fixed;width:6px;height:6px;border-radius:50%;bac
     <div class="mdiv"></div>
     <p class="mbrief">On dit qu'on peut tester la vie sur Mars... ou plutôt ta capacité à ne pas y mourir en trois secondes. Viens mesurer tes compétences avant qu'on t'expédie à 225 millions de kilomètres d'ici sans billet de retour.</p>
     <div class="mstats">
-      <div class="stat"><b>19</b><small>QUESTIONS</small></div>
+      <div class="stat"><b>18</b><small>QUESTIONS</small></div>
       <div class="stat"><b>4</b><small>CHOICES EACH</small></div>
       <div class="stat"><b>∞</b><small>TIME LIMIT</small></div>
     </div>
@@ -366,7 +366,7 @@ body::after{content:'';position:fixed;width:6px;height:6px;border-radius:50%;bac
 <!-- QUIZ -->
 <div class="screen" id="quizScreen">
   <div class="qhdr">
-    <div class="qcounter">QUESTION <span id="qnum">1</span> / 19</div>
+    <div class="qcounter">QUESTION <span id="qnum">1</span> / 18</div>
     <div class="qdisplay">SCORE: <span id="scoreDisp">0</span></div>
   </div>
   <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
@@ -397,7 +397,7 @@ body::after{content:'';position:fixed;width:6px;height:6px;border-radius:50%;bac
 
         <div class="sring-text">
           <span class="snumber" id="finalNum">0</span>
-          <span class="stotal">/ 19</span>
+          <span class="stotal">/ 18</span>
         </div>
       </div>
 
@@ -1079,7 +1079,7 @@ class MarsQuiz {
     const q=QS[this.qIdx];
     document.getElementById('qnum').textContent=this.qIdx+1;
     document.getElementById('scoreDisp').textContent=this.score;
-    document.getElementById('progFill').style.width=(this.qIdx/19*100)+'%';
+    document.getElementById('progFill').style.width=(this.qIdx/18*100)+'%';
     document.getElementById('qCat').textContent=q.cat;
     document.getElementById('qText').textContent=q.q;
     // reset panel animation
@@ -1119,7 +1119,7 @@ class MarsQuiz {
     this._trans(()=>{this._hideAll();this._show('resultsScreen');this._fillResults();});
   }
 _fillResults(){
-    const pct=Math.round(this.score/19*100);
+    const pct=Math.round(this.score/18*100);
 
     let sv,sc;
 
@@ -1142,7 +1142,7 @@ _fillResults(){
 
     document.getElementById('finalNum').textContent=this.score;
     document.getElementById('cCount').textContent=this.score;
-    document.getElementById('wCount').textContent=19-this.score;
+    document.getElementById('wCount').textContent=18-this.score;
     document.getElementById('aPct').textContent=pct+'%';
 
     const circ=2*Math.PI*60,
@@ -1157,7 +1157,7 @@ _fillResults(){
                   'var(--danger)';
 
     setTimeout(()=>{
-        rf.style.strokeDashoffset=circ-(circ*this.score/19);
+        rf.style.strokeDashoffset=circ-(circ*this.score/18);
     },500);
 
     const rl=document.getElementById('rList');
